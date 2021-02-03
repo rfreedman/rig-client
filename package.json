@@ -1,8 +1,7 @@
 {
   "name": "rigclient",
   "build": {
-    "appId": "net.greybeardedgeek.rigclient",
-    "productName": "RigClient",
+    "appId": "net.greybeardedgeek.rigclient", "productName": "RigClient",
     "directories": {
       "output": "release/"
     }

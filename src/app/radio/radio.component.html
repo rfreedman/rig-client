@@ -1,14 +1,21 @@
-<p>Radio Interface</p>
-<br/><br/>
+<div class="container">
+  <div id="clocks">
+    <div>Local: <span class="clock">{{localTime}}</span></div>
+    <div>UTC: <span class="clock">{{utcTime}}</span></div>
+  </div>
 
-<radial-gauge
-  id="s-meter"
-  [options]="gaugeOptions"
-  [value]="signalStrength"
->
-</radial-gauge>
+  <div class="freq_mode">
+    <span class="seven-segment">{{freq}}</span><span> MHz {{mode}}</span>
+  </div>
 
-<br/><br/>
-<p>Mode: {{mode}}</p>
-<p>Freq: {{freq}}</p>
-<p>SignalStrength: {{signalStrength}}</p>
+  <div class="s-meter-container">
+    <radial-gauge
+      id="s-meter"
+      [options]="gaugeOptions"
+      [value]="sValue"
+    >
+    </radial-gauge>
+  </div>
+  <div class="signal-strength">{{signalStrength}}</div>
+
+</div>

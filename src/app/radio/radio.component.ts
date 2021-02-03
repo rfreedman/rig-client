@@ -11,16 +11,23 @@ import {SignalStrengthConverterService} from './signal-strength-converter.servic
 })
 export class RadioComponent implements OnInit {
 
+  utcTime: string;
+  localTime: string;
+
   mode = "init mode";
   freq = "init freq";
-  signalStrength = 5;
+  sValue = 0;
+  signalStrength = "";
 
   destroyed: Subject<boolean> = new Subject();
 
+  interval: NodeJS.Timeout;
+
   gaugeOptions /*: CanvasGauges.RadialGaugeOptions */ = {
-    width: 350,
-    height: 300,
-    units: "S-Units",
+    width: 175,
+    height: 150,
+    units: false,
+    "title": "Signal Strength",
     minValue: 0,
     maxValue: 15,
     value: this.signalStrength,
@@ -79,10 +86,26 @@ export class RadioComponent implements OnInit {
         (data) => this.handleNotification(data),
         (err) => console.error(err)
       );
+
+    this.interval = setInterval(() => this.updateTimes(), 1000);
   }
 
   ngOnDestroy() {
+    if(this.interval) {
+      clearTimeout(this.interval);
+    }
     this.destroyed.next(true);
+  }
+
+  private updateTimes() {
+    const now = new Date();
+    this.localTime = now.toTimeString().substr(0,8);
+    this.utcTime = now.toUTCString().substr(17,8);
+  }
+
+  private numberWithThousandsSeparator(n, separator): string {
+    const parts: string[] = n.toString().split(".");
+    return parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, separator) + (parts[1] ? "." + parts[1] : "");
   }
 
   private handleNotification(notification: string) : void {
@@ -94,14 +117,22 @@ export class RadioComponent implements OnInit {
         this.mode = `${jsonObj['value']}`;
         break;
 
-      case 'get_signal_strength':
-        // this.signalStrength = jsonObj['value'];
-        this.signalStrength = this.signalStrengthConverter.strengthToSLevel(jsonObj['value']);
+      case 'get_signal_strength': {
+        this.sValue = this.signalStrengthConverter.strengthToSLevel(jsonObj['value']);
+        if (this.sValue <= 9) {
+          this.signalStrength = `s${this.sValue}`;
+        } else {
+          this.signalStrength = `${(this.sValue - 9) * 10} over s9`;
+        }
+      }
         break;
 
       case 'get_freq':
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-        this.freq = `${jsonObj['value']}`;
+        // this.freq = `${jsonObj['value']}`;
+
+        // todo - come up with a pipe for this, consider spacing
+        this.freq = this.numberWithThousandsSeparator(jsonObj['value'], '');
         break;
 
       default:
