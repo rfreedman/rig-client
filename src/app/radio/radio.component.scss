@@ -15,7 +15,8 @@
 
 .s-meter-container {
   display:flex;
-  height: 100px;
+  height: 256px;
+  width: 615px;
   overflow: hidden;
   border: 4px ridge lightgray;
   padding-bottom: 20px;
@@ -26,7 +27,7 @@ radial-gauge {
   margin-top: 1rem;
 }
 .seven-segment {
-  font-family: '7segment', 'sans-serif';
+  font-family: roboto, monospace; /*'7segment', 'sans-serif'; */
   font-size: 20px;
   color: blue;
 }

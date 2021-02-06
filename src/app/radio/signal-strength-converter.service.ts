@@ -1,68 +1,25 @@
 export class SignalStrengthConverterService {
 
-  strengthToSLevel(strength) {
+  // returns a number in the range 0 to 15
+  strengthToSLevel(strengthArg: string): number {
+    const strength = Number(strengthArg);
 
-    if(strength < -48) {
+    if (strength < -54) {
+      console.log(`under--range: strength ${strength} is < -54, returning 0 (s0)`);
       return 0;
     }
 
-    if(strength >= -48 && strength < -42) {
-      return 1;
+    // S0 (<= -54dB to S9 (0dB)
+    if(strength <= 0) {
+      return ((strength + 54) / 6);
     }
 
-    if(strength >= -42 && strength < -36) {
-      return 2;
+    // S9+ (10dB = S9+10) , up to S9+60 (60dB)
+    if (strength > 0 && strength <= 60) {
+      return (strength / 10) + 9;
     }
 
-    if(strength >= -36 && strength < -30) {
-      return 3;
-    }
-
-    if(strength >= -30 && strength < -24) {
-      return 4;
-    }
-
-    if(strength >= -24 && strength < -18) {
-      return 6;
-    }
-
-    if(strength >= -18 && strength < -12) {
-      return 7;
-    }
-
-    if(strength >= -12 && strength < -6) {
-      return 8;
-    }
-
-    if(strength >= -6 && strength < 0) {
-      return 9;
-    }
-
-    if(strength >= 0 && strength < 10) {
-      return 10;
-    }
-
-    if(strength >= 10 && strength < 20) {
-      return 11;
-    }
-
-    if(strength >= 20 && strength < 30) {
-      return 12;
-    }
-
-    if(strength >= 30 && strength < 40) {
-      return 13;
-    }
-
-    if(strength >= 40 && strength < 50) {
-      return 13;
-    }
-
-    if(strength >= 50 && strength < 60) {
-      return 14;
-    }
-    if(strength >= 60) {
-      return 15;
-    }
+    console.log(`over-range: strength ${strength} is > 60, returning 15 (s9+60)`);
+    return 15; // don't go beyond full scale at S9+60
   }
 }

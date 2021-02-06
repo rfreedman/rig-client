@@ -2,3 +2,8 @@
   font-family: "7segment";
   src: url("./7segment.ttf") format("opentype");
 }
+
+@font-face {
+  font-family: "roboto";
+  src: url("./RobotoMono-Regular.ttf")  format("opentype");
+}

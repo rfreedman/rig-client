@@ -9,13 +9,18 @@
   </div>
 
   <div class="s-meter-container">
-    <radial-gauge
-      id="s-meter"
-      [options]="gaugeOptions"
-      [value]="sValue"
-    >
-    </radial-gauge>
+    <!-- div style="width:700px; height: 600px;" -->
+      <canvas #meterCanvas style="width:100%; height:100%;"></canvas>
+    <!-- /div -->
   </div>
   <div class="signal-strength">{{signalStrength}}</div>
-
 </div>
+
+<radial-gauge
+  *ngIf="showGauge"
+  style="display:none"
+  id="s-meter"
+  [options]="gaugeOptions"
+  [value]="sValue"
+>
+</radial-gauge>

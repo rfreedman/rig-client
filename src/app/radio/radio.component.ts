@@ -1,4 +1,4 @@
-import {ChangeDetectorRef, Component, OnInit} from '@angular/core';
+import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {ElectronService} from '../core/services';
 import {Subject} from 'rxjs';
 import {takeUntil} from 'rxjs/operators';
@@ -9,8 +9,11 @@ import {SignalStrengthConverterService} from './signal-strength-converter.servic
   templateUrl: './radio.component.html',
   styleUrls: ['./radio.component.scss']
 })
-export class RadioComponent implements OnInit {
+export class RadioComponent implements OnInit, OnDestroy, AfterViewInit {
 
+  @ViewChild('meterCanvas') meterCanvas: ElementRef<HTMLCanvasElement>;
+
+  showGauge = false;
   utcTime: string;
   localTime: string;
 
@@ -24,8 +27,9 @@ export class RadioComponent implements OnInit {
   interval: NodeJS.Timeout;
 
   gaugeOptions /*: CanvasGauges.RadialGaugeOptions */ = {
-    width: 175,
-    height: 150,
+    // width: 175,
+    // height: 150,
+    // renderTo: this.meterCanvas.nativeElement,
     units: false,
     "title": "Signal Strength",
     minValue: 0,
@@ -79,6 +83,12 @@ export class RadioComponent implements OnInit {
     private changeDetector: ChangeDetectorRef) {
   }
 
+  ngAfterViewInit(): void {
+    this.gaugeOptions['renderTo'] = this.meterCanvas.nativeElement;
+    console.log(`renderTo`, this.gaugeOptions['renderTo']);
+    this.showGauge = true;
+  }
+
   ngOnInit(): void {
     this.electron.radioNotifications
       .pipe(takeUntil(this.destroyed))
@@ -89,6 +99,8 @@ export class RadioComponent implements OnInit {
 
     this.interval = setInterval(() => this.updateTimes(), 1000);
   }
+
+
 
   ngOnDestroy() {
     if(this.interval) {
@@ -103,9 +115,8 @@ export class RadioComponent implements OnInit {
     this.utcTime = now.toUTCString().substr(17,8);
   }
 
-  private numberWithThousandsSeparator(n, separator): string {
-    const parts: string[] = n.toString().split(".");
-    return parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, separator) + (parts[1] ? "." + parts[1] : "");
+  private static numberWithThousandsSeparator(n: string, separator): string {
+    return n.replace(/\B(?=(\d{3})+(?!\d))/g, separator);
   }
 
   private handleNotification(notification: string) : void {
@@ -120,9 +131,9 @@ export class RadioComponent implements OnInit {
       case 'get_signal_strength': {
         this.sValue = this.signalStrengthConverter.strengthToSLevel(jsonObj['value']);
         if (this.sValue <= 9) {
-          this.signalStrength = `s${this.sValue}`;
+          this.signalStrength = `s${this.sValue.toFixed(2)}`;
         } else {
-          this.signalStrength = `${(this.sValue - 9) * 10} over s9`;
+          this.signalStrength = `${((this.sValue - 9) * 10).toFixed(2)} over s9`;
         }
       }
         break;
@@ -131,8 +142,8 @@ export class RadioComponent implements OnInit {
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         // this.freq = `${jsonObj['value']}`;
 
-        // todo - come up with a pipe for this, consider spacing
-        this.freq = this.numberWithThousandsSeparator(jsonObj['value'], '');
+        this.freq = RadioComponent.numberWithThousandsSeparator(jsonObj['value'], '.');
+        this.freq = this.freq.substr(0, this.freq.length - 1);
         break;
 
       default:
