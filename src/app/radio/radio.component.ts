@@ -17,8 +17,8 @@ export class RadioComponent implements OnInit, OnDestroy, AfterViewInit {
   utcTime: string;
   localTime: string;
 
-  mode = "init mode";
-  freq = "init freq";
+  mode = "";
+  freq = "";
   sValue = 0;
   signalStrength = "";
 
@@ -120,30 +120,47 @@ export class RadioComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private handleNotification(notification: string) : void {
+    console.log(`handleNotification: ${notification}`);
     const jsonObj = JSON.parse(notification);
+    const status: boolean = jsonObj['status'];
+    const op: string = jsonObj['op'];
+    const value: string = jsonObj['value'];
 
-    switch(jsonObj['op']) {
+    switch(op) {
       case 'get_mode':
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-        this.mode = `${jsonObj['value']}`;
+        if(status) {
+          this.mode = value;
+        } else {
+          this.mode = '';
+          console.error(`handleNotification, command: '${op}' failed`);
+        }
         break;
 
-      case 'get_signal_strength': {
-        this.sValue = this.signalStrengthConverter.strengthToSLevel(jsonObj['value']);
-        if (this.sValue <= 9) {
-          this.signalStrength = `s${this.sValue.toFixed(2)}`;
+      case 'get_signal_strength':
+        if (status) {
+          this.sValue = this.signalStrengthConverter.strengthToSLevel(jsonObj['value']);
+          if (this.sValue <= 9) {
+            this.signalStrength = `s${this.sValue.toFixed(2)}`;
+          } else {
+            this.signalStrength = `${((this.sValue - 9) * 10).toFixed(2)} over s9`;
+          }
         } else {
-          this.signalStrength = `${((this.sValue - 9) * 10).toFixed(2)} over s9`;
+          this.sValue = -1;
+          this.signalStrength = '';
+          console.error(`handleNotification, command: '${op}' failed`);
         }
-      }
         break;
 
       case 'get_freq':
-        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-        // this.freq = `${jsonObj['value']}`;
 
-        this.freq = RadioComponent.numberWithThousandsSeparator(jsonObj['value'], '.');
-        this.freq = this.freq.substr(0, this.freq.length - 1);
+        if(status) {
+          this.freq = RadioComponent.numberWithThousandsSeparator(jsonObj['value'], '.');
+          this.freq = this.freq.substr(0, this.freq.length - 1);
+        } else {
+          this.freq = '';
+          console.error(`handleNotification, command: '${op}' failed`);
+        }
         break;
 
       default:

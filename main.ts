@@ -4,7 +4,7 @@ import * as url from 'url';
 
 import {RadioNetworkService} from './radio.network.service';
 
-let win: BrowserWindow = null;
+let browserWindow: BrowserWindow = null;
 const args = process.argv.slice(1),
   serve = args.some(val => val === '--serve');
 
@@ -19,11 +19,17 @@ function createWindow(): BrowserWindow {
   const channelName = 'radio';
 
   // Create the browser window.
-  win = new BrowserWindow({
+  browserWindow = new BrowserWindow({
+    /*
     x: 0,
     y: 0,
     width: size.width,
     height: size.height,
+     */
+    x: size.width / 4,
+    y: size.height / 4,
+    width: size.width / 2,
+    height: size.height / 2,
     webPreferences: {
       nodeIntegration: true,
       allowRunningInsecureContent: true, // (serve) ? true : false,
@@ -33,22 +39,21 @@ function createWindow(): BrowserWindow {
     },
   });
 
-  win.setTitle("RigClient");
-  win.on('page-title-updated', function(e) {
+  browserWindow.setTitle("RigClient");
+  browserWindow.on('page-title-updated', function(e) {
     e.preventDefault();
   });
 
   if (serve) {
-
-    win.webContents.openDevTools();
+    browserWindow.webContents.openDevTools();
 
     require('electron-reload')(__dirname, {
       electron: require(`${__dirname}/node_modules/electron`)
     });
-    win.loadURL('http://localhost:4200');
+    browserWindow.loadURL('http://localhost:4200');
 
   } else {
-    win.loadURL(url.format({
+    browserWindow.loadURL(url.format({
       pathname: path.join(__dirname, 'dist/index.html'),
       protocol: 'file:',
       slashes: true
@@ -56,7 +61,7 @@ function createWindow(): BrowserWindow {
   }
 
   // Emitted when the window is closed.
-  win.on('closed', () => {
+  browserWindow.on('closed', () => {
     if(notifierTimeout) {
       clearInterval(notifierTimeout);
       notifierTimeout = null;
@@ -70,20 +75,19 @@ function createWindow(): BrowserWindow {
     // Dereference the window object, usually you would store window
     // in an array if your app supports multi windows, this is the time
     // when you should delete the corresponding element.
-    win = null;
+    browserWindow = null;
   });
 
   radio = new RadioNetworkService();
   radio.start('192.168.1.114', 4532, (msg: string) => {
-    // console.log(`radio response: ${msg}`);
-    if(win && win.webContents && msg) {
-      win.webContents.send(channelName, msg);
+    if(browserWindow && browserWindow.webContents && msg) {
+      browserWindow.webContents.send(channelName, msg);
     }
   });
 
   // 300 msec is the fastest that 3 commands can possibly be processed
   notifierTimeout = setInterval(() => radio.update(), 300);
-  return win;
+  return browserWindow;
 }
 
 try {
@@ -105,7 +109,7 @@ try {
   app.on('activate', () => {
     // On OS X it's common to re-create a window in the app when the
     // dock icon is clicked and there are no other windows open.
-    if (win === null) {
+    if (browserWindow === null) {
       app.setName("RigClient");
       createWindow();
     }

@@ -17,25 +17,43 @@ var FifoQueue = /** @class */ (function () {
 var RadioNetworkService = /** @class */ (function () {
     function RadioNetworkService() {
         this.commandQ = new FifoQueue();
+        this.connected = false;
     }
     RadioNetworkService.prototype.start = function (host, port, cb) {
         var _this = this;
         this.client = new net_1.Socket();
         this.callback = cb;
-        console.log('Connecting...');
-        this.client.connect(port, host, function () {
-            console.log(Date() + ": Connected");
-        });
         this.client.on('data', function (data) {
-            _this.processResponse(data);
+            if (data) {
+                _this.processResponse(data);
+            }
         });
         this.client.on('close', function () {
             console.log('Connection closed');
             _this.client.destroy();
+            _this.connected = false;
         });
-        // process commands at interval of 100 msec.
-        // TODO - process next after a previous cmd has finished, instead of on interval?
-        this.timeout = setInterval(function () { return _this.processNext(); }, 100);
+        /*
+        this.client.on('timeout', () => {
+          console.log('Timeout');
+          this.client.destroy();
+          this.connected = false;
+        });
+    
+        this.client.on('error', (err: Error) => {
+          console.log(`Error: ${err.message}`);
+          this.client.destroy();
+          this.connected = false;
+        });
+         */
+        console.log('Connecting...');
+        this.client.connect(port, host, function () {
+            _this.connected = true;
+            console.log(Date() + ": Connected");
+            // process commands at interval of 100 msec.
+            // TODO - process next after a previous cmd has finished, instead of on interval?
+            _this.timeout = setInterval(function () { return _this.processNext(); }, 100);
+        });
     };
     RadioNetworkService.prototype.stop = function () {
         if (this.timeout) {
@@ -49,35 +67,34 @@ var RadioNetworkService = /** @class */ (function () {
         }
     };
     RadioNetworkService.prototype.requestMode = function () {
-        // this.client.write('!m\n');
         this.commandQ.put('!m\n');
     };
     RadioNetworkService.prototype.requestFrequency = function () {
-        // this.client.write('!f\n');
         this.commandQ.put('!f\n');
     };
     RadioNetworkService.prototype.requestSignalStrength = function () {
-        // this.client.write('!l STRENGTH\n');
         this.commandQ.put('!l STRENGTH\n');
     };
     RadioNetworkService.prototype.update = function () {
         var _this = this;
-        this.requestSignalStrength();
-        setTimeout(function () { return _this.requestFrequency(); }, 100);
-        setTimeout(function () { return _this.requestMode(); }, 200);
+        if (this.connected) {
+            this.requestSignalStrength();
+            setTimeout(function () { return _this.requestFrequency(); }, 100);
+            setTimeout(function () { return _this.requestMode(); }, 200);
+        }
     };
     RadioNetworkService.prototype.processResponse = function (response) {
-        if (this.callback) {
+        if (response && this.callback) {
             this.callback(RadioNetworkService.parseResponse(response.toString('utf8')));
         }
     };
     RadioNetworkService.parseResponse = function (response) {
         // get_freq:!Frequency: 7233000!RPRT 0
-        if (response.startsWith('get_freq')) {
+        if (response && response.startsWith('get_freq')) {
             var op = 'get_freq';
             var value = response.split(' ')[1].split('!')[0];
             var status_1 = response.split(' ')[2];
-            if (status_1.endsWith('\n')) {
+            if (status_1 && status_1.endsWith('\n')) {
                 status_1 = status_1.slice(0, status_1.length - 1);
             }
             return JSON.stringify({
@@ -86,11 +103,11 @@ var RadioNetworkService = /** @class */ (function () {
             });
         }
         // get_mode:!Mode: LSB!Passband: 3000!RPRT 0
-        if (response.startsWith('get_mode')) {
+        if (response && response.startsWith('get_mode')) {
             var op = 'get_mode';
             var value = response.split(' ')[1].split('!')[0];
             var status_2 = response.split(' ')[3];
-            if (status_2.endsWith('\n')) {
+            if (status_2 && status_2.endsWith('\n')) {
                 status_2 = status_2.slice(0, status_2.length - 1);
             }
             return JSON.stringify({
@@ -99,7 +116,7 @@ var RadioNetworkService = /** @class */ (function () {
             });
         }
         // get_level: STRENGTH!-44\nRPRT 0\n
-        if (response.startsWith('get_level: STRENGTH!')) {
+        if (response && response.startsWith('get_level: STRENGTH!')) {
             var op = "get_signal_strength";
             var value = response.split('\n')[0].split(' ')[1].split('!')[1];
             var status_3 = response.split('\n')[1].split(' ')[1];
