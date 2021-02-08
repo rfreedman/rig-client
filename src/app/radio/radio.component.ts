@@ -3,6 +3,7 @@ import {ElectronService} from '../core/services';
 import {Subject} from 'rxjs';
 import {takeUntil} from 'rxjs/operators';
 import {SignalStrengthConverterService} from './signal-strength-converter.service';
+import {RadialGauge} from '@biacsics/ng-canvas-gauges';
 
 @Component({
   selector: 'app-radio',
@@ -11,7 +12,9 @@ import {SignalStrengthConverterService} from './signal-strength-converter.servic
 })
 export class RadioComponent implements OnInit, OnDestroy, AfterViewInit {
 
+  @ViewChild('meterContainer') meterContainer: ElementRef<HTMLDivElement>;
   @ViewChild('meterCanvas') meterCanvas: ElementRef<HTMLCanvasElement>;
+  @ViewChild('gauge') gauge: RadialGauge;
 
   showGauge = false;
   utcTime: string;
@@ -85,8 +88,20 @@ export class RadioComponent implements OnInit, OnDestroy, AfterViewInit {
 
   ngAfterViewInit(): void {
     this.gaugeOptions['renderTo'] = this.meterCanvas.nativeElement;
-    console.log(`renderTo`, this.gaugeOptions['renderTo']);
     this.showGauge = true;
+
+    window.addEventListener('resize', () => {
+      this.resizeGauge();
+    });
+  }
+
+  resizeGauge(): void {
+    const containerWidth: number = this.meterContainer.nativeElement.clientWidth;
+    const containerHeight: number = this.meterContainer.nativeElement.clientHeight;
+    const canvasElement = this.meterCanvas.nativeElement;
+    canvasElement.width = containerWidth;
+    canvasElement.height = containerHeight;
+    this.gauge.update({width: containerWidth, height: containerHeight});
   }
 
   ngOnInit(): void {
@@ -100,9 +115,7 @@ export class RadioComponent implements OnInit, OnDestroy, AfterViewInit {
     this.interval = setInterval(() => this.updateTimes(), 1000);
   }
 
-
-
-  ngOnDestroy() {
+  ngOnDestroy(): void {
     if(this.interval) {
       clearTimeout(this.interval);
     }
@@ -120,7 +133,6 @@ export class RadioComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private handleNotification(notification: string) : void {
-    console.log(`handleNotification: ${notification}`);
     const jsonObj = JSON.parse(notification);
     const status: boolean = jsonObj['status'];
     const op: string = jsonObj['op'];
@@ -164,8 +176,6 @@ export class RadioComponent implements OnInit, OnDestroy, AfterViewInit {
         break;
 
       default:
-        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-        console.log(`no match for ${jsonObj}`);
         break;
     }
 

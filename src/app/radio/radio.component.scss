@@ -6,7 +6,7 @@
   flex-direction: row;
   justify-content: space-evenly;
   margin-top: 20px;
-  width: 40rem;
+  width: 100%;
 }
 
 .freq_mode {
@@ -15,13 +15,21 @@
 
 .s-meter-container {
   display:flex;
-  height: 256px;
-  width: 615px;
+
+  height: calc(40vw * 0.857); // 40vh; // 256px;
+  width: 40vw; // 40vw; // 615px;
+
   overflow: hidden;
   border: 4px ridge lightgray;
   padding-bottom: 20px;
   margin-top: 20px;
 }
+
+#meterCanvas {
+  height: calc(40vw * 0.857); // 40vh; // 256px;
+  width: 40vw; // 40vw; // 615px;
+}
+
 
 radial-gauge {
   margin-top: 1rem;
