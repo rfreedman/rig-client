@@ -18,18 +18,17 @@ function createWindow(): BrowserWindow {
   const size = electronScreen.getPrimaryDisplay().workAreaSize;
   const channelName = 'radio';
 
+  console.log('size = ', size);
+  console.log('width / 2 = ', size.width / 2);
+  console.log('height / 2 = ', size.height / 2);
+
   // Create the browser window.
   browserWindow = new BrowserWindow({
-    /*
-    x: 0,
-    y: 0,
-    width: size.width,
-    height: size.height,
-     */
-    x: size.width / 4,
-    y: size.height / 4,
-    width: size.width / 2,
-    height: size.height / 2,
+    x: Math.round(size.width / 4),
+    y: Math.round(size.height / 4),
+    width: Math.round(size.width / 2),
+    height: Math.round(size.height / 2.2),
+
     webPreferences: {
       nodeIntegration: true,
       allowRunningInsecureContent: true, // (serve) ? true : false,

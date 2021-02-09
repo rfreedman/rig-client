@@ -63,7 +63,12 @@ var RadioNetworkService = /** @class */ (function () {
     RadioNetworkService.prototype.processNext = function () {
         var nextCmd = this.commandQ.get();
         if (nextCmd) {
-            this.client.write(nextCmd);
+            try {
+                this.client.write(nextCmd);
+            }
+            catch (e) {
+                console.error(e);
+            }
         }
     };
     RadioNetworkService.prototype.requestMode = function () {

@@ -75,7 +75,11 @@ export class RadioNetworkService {
   private processNext(): void {
     const nextCmd = this.commandQ.get();
     if(nextCmd) {
-      this.client.write(nextCmd);
+      try {
+        this.client.write(nextCmd);
+      } catch(e) {
+        console.error(e);
+      }
     }
   }
 
