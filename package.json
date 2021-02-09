@@ -1,7 +1,8 @@
 {
   "name": "rigclient",
   "build": {
-    "appId": "net.greybeardedgeek.rigclient", "productName": "RigClient",
+    "appId": "net.greybeardedgeek.rigclient",
+    "productName": "RigClient",
     "directories": {
       "output": "release/"
     }
@@ -36,7 +37,8 @@
     "lint": "ng lint"
   },
   "dependencies": {
-    "@biacsics/ng-canvas-gauges": "6.0.7"
+    "@biacsics/ng-canvas-gauges": "6.0.7",
+    "fs": "0.0.1-security"
   },
   "devDependencies": {
     "@angular-builders/custom-webpack": "10.0.1",

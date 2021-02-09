@@ -1,6 +1,8 @@
 import { app, BrowserWindow, screen } from 'electron';
 import * as path from 'path';
 import * as url from 'url';
+import * as os from 'os';
+import * as fs from 'fs';
 
 import {RadioNetworkService} from './radio.network.service';
 
@@ -11,23 +13,63 @@ const args = process.argv.slice(1),
 let radio: RadioNetworkService;
 let notifierTimeout: NodeJS.Timeout;
 
+interface RigClientConfig {
+  x: number,
+  y: number,
+  width: number,
+  height: number
+}
+
+function getConfigPath(): string {
+  return path.resolve(os.homedir(), '.rig-client.json');
+}
+function readConfig(): RigClientConfig | null {
+  const configPath = getConfigPath();
+  if (fs.existsSync(configPath)) {
+    const rawData = fs.readFileSync(configPath);
+    return JSON.parse(rawData.toString()) as RigClientConfig;
+  }
+
+  return null;
+}
+
+function writeConfig(): void {
+  const configPath = getConfigPath();
+
+  if(browserWindow) {
+    const bounds = browserWindow.getBounds();
+    const config: RigClientConfig = {
+      x: bounds.x,
+      y: bounds.y,
+      width: bounds.width,
+      height: bounds.height
+    };
+    const configJson = JSON.stringify(config);
+    fs.writeFileSync(configPath, configJson);
+  }
+}
 
 function createWindow(): BrowserWindow {
-
   const electronScreen = screen;
   const size = electronScreen.getPrimaryDisplay().workAreaSize;
   const channelName = 'radio';
 
-  console.log('size = ', size);
-  console.log('width / 2 = ', size.width / 2);
-  console.log('height / 2 = ', size.height / 2);
+  let config: RigClientConfig = readConfig();
+  if (!config) {
+    config = {
+      x: Math.round(size.width / 4),
+      y: Math.round(size.height / 4),
+      width: Math.round(size.width / 2),
+      height: Math.round(size.height / 2.2),
+    };
+  }
 
   // Create the browser window.
   browserWindow = new BrowserWindow({
-    x: Math.round(size.width / 4),
-    y: Math.round(size.height / 4),
-    width: Math.round(size.width / 2),
-    height: Math.round(size.height / 2.2),
+    x: config.x,
+    y: config.y,
+    width: config.width,
+    height: config.height,
 
     webPreferences: {
       nodeIntegration: true,
@@ -59,8 +101,14 @@ function createWindow(): BrowserWindow {
     }));
   }
 
+  // Emitted when the window is about to be closed.
+  browserWindow.on('close', () => {
+    writeConfig();
+  });
+
   // Emitted when the window is closed.
   browserWindow.on('closed', () => {
+
     if(notifierTimeout) {
       clearInterval(notifierTimeout);
       notifierTimeout = null;
