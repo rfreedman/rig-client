@@ -33,23 +33,29 @@ var RadioNetworkService = /** @class */ (function () {
             _this.client.destroy();
             _this.connected = false;
         });
-        /*
-        this.client.on('timeout', () => {
-          console.log('Timeout');
-          this.client.destroy();
-          this.connected = false;
+        this.client.on('timeout', function () {
+            console.log('Timeout');
+            _this.client.destroy();
+            _this.connected = false;
+            if (_this.callback) {
+                _this.callback("CONNECT_ERROR");
+            }
         });
-    
-        this.client.on('error', (err: Error) => {
-          console.log(`Error: ${err.message}`);
-          this.client.destroy();
-          this.connected = false;
+        this.client.on('error', function (err) {
+            console.log("Error: " + err.message);
+            _this.client.destroy();
+            _this.connected = false;
+            if (_this.callback) {
+                _this.callback("CONNECT_ERROR");
+            }
         });
-         */
         console.log('Connecting...');
         this.client.connect(port, host, function () {
             _this.connected = true;
             console.log(Date() + ": Connected");
+            if (_this.callback) {
+                _this.callback("CONNECTED");
+            }
             // process commands at interval of 100 msec.
             // TODO - process next after a previous cmd has finished, instead of on interval?
             _this.timeout = setInterval(function () { return _this.processNext(); }, 100);

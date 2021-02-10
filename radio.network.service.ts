@@ -41,24 +41,33 @@ export class RadioNetworkService {
       this.connected = false;
     });
 
-    /*
     this.client.on('timeout', () => {
       console.log('Timeout');
       this.client.destroy();
       this.connected = false;
+      if(this.callback) {
+        this.callback("CONNECT_ERROR");
+      }
     });
 
     this.client.on('error', (err: Error) => {
       console.log(`Error: ${err.message}`);
       this.client.destroy();
       this.connected = false;
+      if(this.callback) {
+        this.callback("CONNECT_ERROR");
+      }
     });
-     */
 
     console.log('Connecting...');
+
     this.client.connect(port, host, () => {
       this.connected = true;
       console.log(`${Date()}: Connected`);
+
+      if(this.callback) {
+        this.callback("CONNECTED");
+      }
 
       // process commands at interval of 100 msec.
       // TODO - process next after a previous cmd has finished, instead of on interval?

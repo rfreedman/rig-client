@@ -1,14 +1,17 @@
-import { app, BrowserWindow, screen } from 'electron';
 import * as path from 'path';
 import * as url from 'url';
 import * as os from 'os';
 import * as fs from 'fs';
 
+import {app, BrowserWindow, screen} from 'electron';
+const { dialog } = require('electron');
 import {RadioNetworkService} from './radio.network.service';
 
+const channelName = 'radio';
+
 let browserWindow: BrowserWindow = null;
-const args = process.argv.slice(1),
-  serve = args.some(val => val === '--serve');
+const args = process.argv.slice(1);
+const serve = args.some(val => val === '--serve');
 
 let radio: RadioNetworkService;
 let notifierTimeout: NodeJS.Timeout;
@@ -23,6 +26,7 @@ interface RigClientConfig {
 function getConfigPath(): string {
   return path.resolve(os.homedir(), '.rig-client.json');
 }
+
 function readConfig(): RigClientConfig | null {
   const configPath = getConfigPath();
   if (fs.existsSync(configPath)) {
@@ -49,18 +53,44 @@ function writeConfig(): void {
   }
 }
 
+function startRadio(): void {
+  const host = app.commandLine.getSwitchValue("host") || '127.0.0.1';
+  const portStr = app.commandLine.getSwitchValue("port") || '4532';
+  const port = Number(portStr);
+
+  radio = new RadioNetworkService();
+  radio.start(host, port, (msg: string) => {
+    if(msg === 'CONNECTED') {
+      notifierTimeout = setInterval(() => radio.update(), 300);
+      return;
+    }
+
+    if(msg === 'CONNECT_ERROR') {
+      if(browserWindow) {
+        browserWindow.close();
+      }
+      dialog.showErrorBox('RigClient Error', `Failed to connect to rigctl instance at ${host}:${port}`);
+      app.quit();
+      return;
+    }
+
+    if (browserWindow && browserWindow.webContents && msg) {
+      browserWindow.webContents.send(channelName, msg);
+    }
+  });
+}
+
 function createWindow(): BrowserWindow {
-  const electronScreen = screen;
-  const size = electronScreen.getPrimaryDisplay().workAreaSize;
-  const channelName = 'radio';
+  startRadio();
 
   let config: RigClientConfig = readConfig();
   if (!config) {
+    const workAreaSize = screen.getPrimaryDisplay().workAreaSize;
     config = {
-      x: Math.round(size.width / 4),
-      y: Math.round(size.height / 4),
-      width: Math.round(size.width / 2),
-      height: Math.round(size.height / 2.2),
+      x: Math.round(workAreaSize.width / 4),
+      y: Math.round(workAreaSize.height / 4),
+      width: Math.round(workAreaSize.width / 2),
+      height: Math.round(workAreaSize.height / 2.2),
     };
   }
 
@@ -125,15 +155,6 @@ function createWindow(): BrowserWindow {
     browserWindow = null;
   });
 
-  radio = new RadioNetworkService();
-  radio.start('192.168.1.114', 4532, (msg: string) => {
-    if(browserWindow && browserWindow.webContents && msg) {
-      browserWindow.webContents.send(channelName, msg);
-    }
-  });
-
-  // 300 msec is the fastest that 3 commands can possibly be processed
-  notifierTimeout = setInterval(() => radio.update(), 300);
   return browserWindow;
 }
 
@@ -142,27 +163,14 @@ try {
   // initialization and is ready to create browser windows.
   // Some APIs can only be used after this event occurs.
   // Added 400 ms to fix the black background issue while using transparent window. More detais at https://github.com/electron/electron/issues/15947
-  app.on('ready', () => setTimeout(createWindow, 400));
+  app.on('ready', () => {
+    setTimeout(createWindow, 400);
+  });
 
   // Quit when all windows are closed.
   app.on('window-all-closed', () => {
-    // On OS X it is common for applications and their menu bar
-    // to stay active until the user quits explicitly with Cmd + Q
-    // if (process.platform !== 'darwin') {
     app.quit();
-    // }
   });
-
-  app.on('activate', () => {
-    // On OS X it's common to re-create a window in the app when the
-    // dock icon is clicked and there are no other windows open.
-    if (browserWindow === null) {
-      app.setName("RigClient");
-      createWindow();
-    }
-  });
-
 } catch (e) {
-  // Catch Error
-  // throw e;
+  console.error(e);
 }
