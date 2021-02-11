@@ -71,7 +71,7 @@ export class RadioNetworkService {
 
       // process commands at interval of 100 msec.
       // TODO - process next after a previous cmd has finished, instead of on interval?
-      this.timeout = setInterval(() => this.processNext(), 100);
+      this.timeout = setInterval(() => this.processNext(), 200);
     });
   }
 
@@ -107,8 +107,8 @@ export class RadioNetworkService {
   public update() {
     if(this.connected) {
       this.requestSignalStrength();
-      setTimeout(() => this.requestFrequency(), 100);
-      setTimeout(() => this.requestMode(), 200);
+      setTimeout(() => this.requestFrequency(), 200);
+      setTimeout(() => this.requestMode(), 400);
     }
   }
 

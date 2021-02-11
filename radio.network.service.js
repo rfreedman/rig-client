@@ -58,7 +58,7 @@ var RadioNetworkService = /** @class */ (function () {
             }
             // process commands at interval of 100 msec.
             // TODO - process next after a previous cmd has finished, instead of on interval?
-            _this.timeout = setInterval(function () { return _this.processNext(); }, 100);
+            _this.timeout = setInterval(function () { return _this.processNext(); }, 200);
         });
     };
     RadioNetworkService.prototype.stop = function () {
@@ -90,8 +90,8 @@ var RadioNetworkService = /** @class */ (function () {
         var _this = this;
         if (this.connected) {
             this.requestSignalStrength();
-            setTimeout(function () { return _this.requestFrequency(); }, 100);
-            setTimeout(function () { return _this.requestMode(); }, 200);
+            setTimeout(function () { return _this.requestFrequency(); }, 200);
+            setTimeout(function () { return _this.requestMode(); }, 400);
         }
     };
     RadioNetworkService.prototype.processResponse = function (response) {

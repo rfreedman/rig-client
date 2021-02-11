@@ -61,7 +61,7 @@ function startRadio(): void {
   radio = new RadioNetworkService();
   radio.start(host, port, (msg: string) => {
     if(msg === 'CONNECTED') {
-      notifierTimeout = setInterval(() => radio.update(), 300);
+      notifierTimeout = setInterval(() => radio.update(), 500);
       return;
     }
 
