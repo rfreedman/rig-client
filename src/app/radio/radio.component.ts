@@ -128,8 +128,11 @@ export class RadioComponent implements OnInit, OnDestroy, AfterViewInit {
     this.utcTime = now.toUTCString().substr(17,8);
   }
 
-  private static numberWithThousandsSeparator(n: string, separator): string {
-    return n.replace(/\B(?=(\d{3})+(?!\d))/g, separator);
+  private static numberWithThousandsSeparator(n: string, separator: string): string {
+    if(n && separator) {
+      return n.replace(/\B(?=(\d{3})+(?!\d))/g, separator);
+    }
+    return n;
   }
 
   private handleNotification(notification: string) : void {
@@ -158,8 +161,10 @@ export class RadioComponent implements OnInit, OnDestroy, AfterViewInit {
         break;
 
       case 'get_freq':
-        this.freq = RadioComponent.numberWithThousandsSeparator(jsonObj['value'], '.');
-        this.freq = this.freq.substr(0, this.freq.length - 1);
+        if(jsonObj['value']) {
+          this.freq = RadioComponent.numberWithThousandsSeparator(jsonObj['value'], '.');
+          this.freq = this.freq.substr(0, this.freq.length - 1);
+        }
         break;
 
       default:
