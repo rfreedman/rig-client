@@ -14,6 +14,7 @@ var FifoQueue = /** @class */ (function () {
     };
     return FifoQueue;
 }());
+var minCmdIntervalMsec = 100;
 var RadioNetworkService = /** @class */ (function () {
     function RadioNetworkService() {
         this.commandQ = new FifoQueue();
@@ -56,17 +57,15 @@ var RadioNetworkService = /** @class */ (function () {
             if (_this.callback) {
                 _this.callback("CONNECTED");
             }
-            // process commands at interval of 100 msec.
-            // TODO - process next after a previous cmd has finished, instead of on interval?
-            _this.timeout = setInterval(function () { return _this.processNext(); }, 200);
+            // kick off the command processor
+            setTimeout(function () { return _this.processNext(); }, minCmdIntervalMsec);
         });
     };
     RadioNetworkService.prototype.stop = function () {
-        if (this.timeout) {
-            clearTimeout(this.timeout);
-        }
+        this.connected = false;
     };
     RadioNetworkService.prototype.processNext = function () {
+        var _this = this;
         var nextCmd = this.commandQ.get();
         if (nextCmd) {
             try {
@@ -76,68 +75,62 @@ var RadioNetworkService = /** @class */ (function () {
                 console.error(e);
             }
         }
+        else {
+            this.queueCommands();
+            setTimeout(function () { return _this.processNext(); }, minCmdIntervalMsec);
+        }
     };
     RadioNetworkService.prototype.requestMode = function () {
-        this.commandQ.put('!m\n');
+        this.commandQ.put('|m\n');
     };
     RadioNetworkService.prototype.requestFrequency = function () {
-        this.commandQ.put('!f\n');
+        this.commandQ.put('|f\n');
     };
     RadioNetworkService.prototype.requestSignalStrength = function () {
-        this.commandQ.put('!l STRENGTH\n');
+        this.commandQ.put('|l STRENGTH\n');
     };
-    RadioNetworkService.prototype.update = function () {
-        var _this = this;
+    RadioNetworkService.prototype.queueCommands = function () {
         if (this.connected) {
             this.requestSignalStrength();
-            setTimeout(function () { return _this.requestFrequency(); }, 200);
-            setTimeout(function () { return _this.requestMode(); }, 400);
+            this.requestFrequency();
+            this.requestMode();
         }
     };
     RadioNetworkService.prototype.processResponse = function (response) {
+        var _this = this;
         if (response && this.callback) {
             this.callback(RadioNetworkService.parseResponse(response.toString('utf8')));
         }
+        setTimeout(function () { return _this.processNext(); }, minCmdIntervalMsec);
     };
     RadioNetworkService.parseResponse = function (response) {
-        // get_freq:!Frequency: 7233000!RPRT 0
-        if (response && response.startsWith('get_freq')) {
-            var op = 'get_freq';
-            var value = response.split(' ')[1].split('!')[0];
-            var status_1 = response.split(' ')[2];
-            if (status_1 && status_1.endsWith('\n')) {
-                status_1 = status_1.slice(0, status_1.length - 1);
+        var parts = response.split(/[|,\n]+/);
+        var op = parts[0].split(':')[0];
+        var value;
+        var status;
+        // find status
+        for (var i = 1; i < parts.length; i++) {
+            if (parts[i].startsWith('RPRT')) {
+                status = parts[i].substr(5);
+                break;
             }
-            return JSON.stringify({
-                op: op, value: value,
-                status: status_1 === '0'
-            });
         }
-        // get_mode:!Mode: LSB!Passband: 3000!RPRT 0
-        if (response && response.startsWith('get_mode')) {
-            var op = 'get_mode';
-            var value = response.split(' ')[1].split('!')[0];
-            var status_2 = response.split(' ')[3];
-            if (status_2 && status_2.endsWith('\n')) {
-                status_2 = status_2.slice(0, status_2.length - 1);
+        if (status === "0") {
+            var rawValue = parts[1].trim();
+            if (rawValue.includes(': ')) {
+                value = rawValue.split(': ')[1];
             }
-            return JSON.stringify({
-                op: op, value: value,
-                status: status_2 === '0'
-            });
+            else {
+                value = rawValue;
+            }
         }
-        // get_level: STRENGTH!-44\nRPRT 0\n
-        if (response && response.startsWith('get_level: STRENGTH!')) {
-            var op = "get_signal_strength";
-            var value = response.split('\n')[0].split(' ')[1].split('!')[1];
-            var status_3 = response.split('\n')[1].split(' ')[1];
-            return JSON.stringify({
-                op: op, value: value,
-                status: status_3 === '0'
-            });
+        else {
+            value = null;
         }
-        // default
-        return JSON.stringify({ 'op': 'unknown', "value": '', status: NaN });
+        if (op === 'get_level') {
+            op = 'get_signal_strength';
+        }
+        return JSON.stringify({ "op": op, "value": value, "status": status });
     };
     return RadioNetworkService;
 }());

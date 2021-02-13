@@ -14,7 +14,7 @@ const args = process.argv.slice(1);
 const serve = args.some(val => val === '--serve');
 
 let radio: RadioNetworkService;
-let notifierTimeout: NodeJS.Timeout;
+// let notifierTimeout: NodeJS.Timeout;
 
 interface RigClientConfig {
   x: number,
@@ -60,10 +60,6 @@ function startRadio(): void {
 
   radio = new RadioNetworkService();
   radio.start(host, port, (msg: string) => {
-    if(msg === 'CONNECTED') {
-      notifierTimeout = setInterval(() => radio.update(), 500);
-      return;
-    }
 
     if(msg === 'CONNECT_ERROR') {
       if(browserWindow) {
@@ -139,10 +135,12 @@ function createWindow(): BrowserWindow {
   // Emitted when the window is closed.
   browserWindow.on('closed', () => {
 
+    /*
     if(notifierTimeout) {
       clearInterval(notifierTimeout);
       notifierTimeout = null;
     }
+     */
 
     if(radio) {
       radio.stop();

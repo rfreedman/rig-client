@@ -138,41 +138,28 @@ export class RadioComponent implements OnInit, OnDestroy, AfterViewInit {
     const op: string = jsonObj['op'];
     const value: string = jsonObj['value'];
 
+    if(!status) {
+      console.log(`failed command: ${op}`);
+      return;
+    }
+
     switch(op) {
       case 'get_mode':
-        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-        if(status) {
-          this.mode = value;
-        } else {
-          this.mode = '';
-          console.error(`handleNotification, command: '${op}' failed`);
-        }
+        this.mode = value;
         break;
 
       case 'get_signal_strength':
-        if (status) {
-          this.sValue = this.signalStrengthConverter.strengthToSLevel(jsonObj['value']);
-          if (this.sValue <= 9) {
-            this.signalStrength = `s${this.sValue.toFixed(2)}`;
-          } else {
-            this.signalStrength = `${((this.sValue - 9) * 10).toFixed(2)} over s9`;
-          }
+        this.sValue = this.signalStrengthConverter.strengthToSLevel(jsonObj['value']);
+        if (this.sValue <= 9) {
+          this.signalStrength = `s${this.sValue.toFixed(2)}`;
         } else {
-          this.sValue = -1;
-          this.signalStrength = '';
-          console.error(`handleNotification, command: '${op}' failed`);
+          this.signalStrength = `${((this.sValue - 9) * 10).toFixed(2)} over s9`;
         }
         break;
 
       case 'get_freq':
-
-        if(status) {
-          this.freq = RadioComponent.numberWithThousandsSeparator(jsonObj['value'], '.');
-          this.freq = this.freq.substr(0, this.freq.length - 1);
-        } else {
-          this.freq = '';
-          console.error(`handleNotification, command: '${op}' failed`);
-        }
+        this.freq = RadioComponent.numberWithThousandsSeparator(jsonObj['value'], '.');
+        this.freq = this.freq.substr(0, this.freq.length - 1);
         break;
 
       default:

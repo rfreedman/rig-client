@@ -1,6 +1,5 @@
 import {Socket} from 'net';
 
-
 class FifoQueue<T> {
   private q: T[] = [];
 
@@ -13,15 +12,14 @@ class FifoQueue<T> {
   }
 }
 
-export class RadioNetworkService {
+const minCmdIntervalMsec = 100;
 
+export class RadioNetworkService {
   client: Socket;
 
   callback: (string) => void;
 
   commandQ: FifoQueue<string> = new FifoQueue<string>();
-
-  timeout: NodeJS.Timeout;
 
   connected = false;
 
@@ -69,16 +67,13 @@ export class RadioNetworkService {
         this.callback("CONNECTED");
       }
 
-      // process commands at interval of 100 msec.
-      // TODO - process next after a previous cmd has finished, instead of on interval?
-      this.timeout = setInterval(() => this.processNext(), 200);
+      // kick off the command processor
+      setTimeout(() => this.processNext(), minCmdIntervalMsec);
     });
   }
 
   public stop() {
-    if(this.timeout) {
-      clearTimeout(this.timeout);
-    }
+    this.connected = false;
   }
 
   private processNext(): void {
@@ -89,26 +84,29 @@ export class RadioNetworkService {
       } catch(e) {
         console.error(e);
       }
+    } else {
+      this.queueCommands();
+      setTimeout(() => this.processNext(), minCmdIntervalMsec);
     }
   }
 
   public requestMode(): void {
-    this.commandQ.put('!m\n');
+    this.commandQ.put('|m\n');
   }
 
   public requestFrequency(): void {
-    this.commandQ.put('!f\n');
+    this.commandQ.put('|f\n');
   }
 
   public requestSignalStrength(): void {
-    this.commandQ.put('!l STRENGTH\n');
+    this.commandQ.put('|l STRENGTH\n');
   }
 
-  public update() {
+  private queueCommands(): void {
     if(this.connected) {
       this.requestSignalStrength();
-      setTimeout(() => this.requestFrequency(), 200);
-      setTimeout(() => this.requestMode(), 400);
+      this.requestFrequency();
+      this.requestMode();
     }
   }
 
@@ -116,47 +114,38 @@ export class RadioNetworkService {
     if(response && this.callback) {
       this.callback(RadioNetworkService.parseResponse(response.toString('utf8')));
     }
+    setTimeout(() => this.processNext(), minCmdIntervalMsec);
   }
 
   private static parseResponse(response: string): string {
-    // get_freq:!Frequency: 7233000!RPRT 0
-    if (response && response.startsWith('get_freq')) {
-      const op = 'get_freq';
-      const value = response.split(' ')[1].split('!')[0];
-      let status = response.split(' ')[2];
-      if(status && status.endsWith('\n')) {
-        status = status.slice(0, status.length - 1);
+    const parts: string[] = response.split(/[|,\n]+/);
+    let op = parts[0].split(':')[0];
+    let value;
+    let status;
+
+    // find status
+    for(let i = 1; i < parts.length; i++) {
+      if(parts[i].startsWith('RPRT')) {
+        status = parts[i].substr(5);
+        break;
       }
-      return JSON.stringify({
-        op, value, status: status === '0'
-      });
     }
 
-    // get_mode:!Mode: LSB!Passband: 3000!RPRT 0
-    if (response && response.startsWith('get_mode')) {
-      const op = 'get_mode';
-      const value = response.split(' ')[1].split('!')[0];
-      let status = response.split(' ')[3];
-      if(status && status.endsWith('\n')) {
-        status = status.slice(0, status.length - 1);
+    if(status === "0") {
+      const rawValue = parts[1].trim();
+      if(rawValue.includes(': ')) {
+        value = rawValue.split(': ')[1];
+      } else {
+        value = rawValue;
       }
-      return JSON.stringify({
-        op, value, status: status === '0'
-      });
+    } else {
+      value = null;
     }
 
-    // get_level: STRENGTH!-44\nRPRT 0\n
-    if(response && response.startsWith('get_level: STRENGTH!')) {
-      const op = "get_signal_strength";
-      const value = response.split('\n')[0].split(' ')[1].split('!')[1];
-      const status = response.split('\n')[1].split(' ')[1];
-
-      return JSON.stringify({
-        op, value, status: status === '0'
-      });
+    if(op === 'get_level') {
+      op ='get_signal_strength';
     }
 
-    // default
-    return JSON.stringify({'op': 'unknown', "value": '', status: NaN});
+    return JSON.stringify({"op": op, "value": value, "status": status});
   }
 }
