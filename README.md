@@ -34,42 +34,11 @@ When run the first time, RigClient attempts to size its window to a reasonable s
 
 ## Download
 
-Builds are available for the following platforms:
-
-<ul>
-  <li style="margin-bottom: 10px;">
-  <a href="https://github.com/rfreedman/rig-client/releases/download/v0.1.0/rigclient_0.1.0_armv7l.deb">
-  Raspberry Pi (.deb for Linux ARM V7, tested on Raspberry Pi 4 / Raspbian OS)
-  </a>
-  </li>
-  
-  <li style="margin-bottom: 10px;">
-  <a href="https://github.com/rfreedman/rig-client/releases/download/v0.1.0/RigClient-0.1.0.AppImage">
-  Linux (.AppImage for Linux amd64, tested on Ubuntu 16.04) 
-  </a>
-  </li>
-  
-  <li style="margin-bottom: 10px;">
-  <a href="https://github.com/rfreedman/rig-client/releases/download/v0.1.0/rigclient_0.1.0_amd64.snap">
-  Linux (.snap for Linux amd64, tested on Ubuntu 16.04)
-  </a> 
-  </li>
-  
-  <li style="margin-bottom: 10px;">
-   <a href="https://github.com/rfreedman/rig-client/releases/download/v0.1.0/RigClient-0.1.0.dmg">
-  Mac OS (.dmg for macOS x86, tested on 2017 Macbook Pro, macOS Catalina 10.15.6)
-  </a>
-  </li>
-  
-  <li>
-  <a href="https://github.com/rfreedman/rig-client/releases/download/v0.1.0/RigClient.Setup.0.1.0.exe">
-  Windows (setup .exe, untested)
-  </a>
-  </li>
-</ul>
+Builds are available for Mac OS, Windows, Linux x86, and Raspberry Pi (arm7)
+at https://github.com/rfreedman/rig-client/releases/tag/v0.1.3
 
 ## Source
-Source code can be found at https://github.com/rfreedman/rig-client.
+Source code can be found at https://github.com/rfreedman/rig-client
 
 <a href="https://github.com/rfreedman/rig-client/issues">Bug reports</a> and pull requests welcome.
 

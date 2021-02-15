@@ -158,7 +158,14 @@ function createCustomMenu() {
     ...(isMac ? [{
       label: app.name,
       submenu: [
-        { role: 'about' },
+        // { role: 'about' },
+        {
+          label: 'about',
+          click: async () => {
+            const { shell } = require('electron');
+            await shell.openExternal(`https://github.com/rfreedman/rig-client/releases/tag/v${process.env.npm_package_version}`);
+          }
+        },
         { type: 'separator' },
         { role: 'quit' }
       ]
@@ -203,16 +210,14 @@ function createCustomMenu() {
       {
         role: 'help',
         submenu: [
-          { role: 'about' }
-          /*
+          // { role: 'about' }
           {
             label: 'about',
             click: async () => {
               const { shell } = require('electron');
-              await shell.openExternal('https://electronjs.org');
+              await shell.openExternal(`https://github.com/rfreedman/rig-client/releases/tag/v${process.env.npm_package_version}`);
             }
           }
-          */
         ]
       } as unknown as Electron.MenuItem
     );
