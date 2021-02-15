@@ -3,7 +3,10 @@ import * as url from 'url';
 import * as os from 'os';
 import * as fs from 'fs';
 
-import {app, BrowserWindow, screen} from 'electron';
+const isMac = process.platform === 'darwin';
+
+import {app, BrowserWindow, Menu, screen} from 'electron';
+
 const { dialog } = require('electron');
 import {RadioNetworkService} from './radio.network.service';
 
@@ -12,9 +15,9 @@ const channelName = 'radio';
 let browserWindow: BrowserWindow = null;
 const args = process.argv.slice(1);
 const serve = args.some(val => val === '--serve');
+const dev = args.some(val => val === '--dev');
 
 let radio: RadioNetworkService;
-// let notifierTimeout: NodeJS.Timeout;
 
 interface RigClientConfig {
   x: number,
@@ -134,14 +137,6 @@ function createWindow(): BrowserWindow {
 
   // Emitted when the window is closed.
   browserWindow.on('closed', () => {
-
-    /*
-    if(notifierTimeout) {
-      clearInterval(notifierTimeout);
-      notifierTimeout = null;
-    }
-     */
-
     if(radio) {
       radio.stop();
       radio = null;
@@ -153,7 +148,89 @@ function createWindow(): BrowserWindow {
     browserWindow = null;
   });
 
+  createCustomMenu();
   return browserWindow;
+}
+
+function createCustomMenu() {
+  const template = [
+    // { role: 'appMenu' }
+    ...(isMac ? [{
+      label: app.name,
+      submenu: [
+        { role: 'about' },
+        { type: 'separator' },
+        { role: 'quit' }
+      ]
+    }] : []),
+
+    // { role: 'fileMenu' }
+    // todo - omit this for mac
+    ...(isMac ? [] : [{
+      label: 'File',
+      submenu: [
+        { role: 'quit' }
+      ]
+    }]),
+
+    // { role: 'viewMenu' }
+    {
+      label: 'View',
+      submenu:
+
+        dev ? [
+          { role: 'reload' },
+          { role: 'forceReload' },
+          { role: 'toggleDevTools' },
+          { type: 'separator' },
+          { role: 'resetZoom' },
+          { role: 'zoomIn' },
+          { role: 'zoomOut' },
+          { type: 'separator' },
+          { role: 'togglefullscreen' }
+        ] : [
+          { role: 'resetZoom' },
+          { role: 'zoomIn' },
+          { role: 'zoomOut' },
+          { type: 'separator' },
+          { role: 'togglefullscreen' }
+        ]
+    }
+  ] as unknown as Electron.MenuItem[];
+
+  if(!isMac) {
+    template.unshift(
+      {
+        role: 'help',
+        submenu: [
+          { role: 'about' }
+          /*
+          {
+            label: 'about',
+            click: async () => {
+              const { shell } = require('electron');
+              await shell.openExternal('https://electronjs.org');
+            }
+          }
+          */
+        ]
+      } as unknown as Electron.MenuItem
+    );
+  }
+
+  const menu = Menu.buildFromTemplate(template);
+  Menu.setApplicationMenu(menu);
+
+  // TODO: maybe use a custom dialog for 'about' ?
+  app.setAboutPanelOptions({
+    "applicationName": "RigClient",
+    "applicationVersion": "",
+    "version": process.env.npm_package_version,
+    "authors": ["Rich Freedman N2EHL"],
+    "copyright": "",
+    "website": "https://github.com/rfreedman/rig-client",
+    "iconPath": "build/icon.png"
+  });
 }
 
 try {
