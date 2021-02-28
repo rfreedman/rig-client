@@ -163,7 +163,7 @@ function createCustomMenu() {
           label: 'about',
           click: async () => {
             const { shell } = require('electron');
-            await shell.openExternal(`https://github.com/rfreedman/rig-client/releases/tag/v${process.env.npm_package_version}`);
+            await shell.openExternal(`https://github.com/rfreedman/rig-client/releases/tag/v0.1.3`);
           }
         },
         { type: 'separator' },
@@ -215,7 +215,7 @@ function createCustomMenu() {
             label: 'about',
             click: async () => {
               const { shell } = require('electron');
-              await shell.openExternal(`https://github.com/rfreedman/rig-client/releases/tag/v${process.env.npm_package_version}`);
+              await shell.openExternal(`https://github.com/rfreedman/rig-client/releases/tag/v0.1.3`);
             }
           }
         ]
