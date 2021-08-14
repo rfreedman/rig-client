@@ -108,12 +108,15 @@ var RadioNetworkService = /** @class */ (function () {
         var op = parts[0].split(':')[0];
         var value;
         var status;
+        console.log(response);
         // find status
         for (var i = 1; i < parts.length; i++) {
             if (parts[i].startsWith('RPRT')) {
                 status = parts[i].substr(5);
+                // console.log(`found status`, status);
                 break;
             }
+            // console.log(`parsed status = `, status);
         }
         if (status === "0") {
             var rawValue = parts[1].trim();

@@ -123,6 +123,8 @@ export class RadioNetworkService {
     let value;
     let status;
 
+    console.log(response);
+
     // find status
     for(let i = 1; i < parts.length; i++) {
       if(parts[i].startsWith('RPRT')) {

@@ -5,6 +5,8 @@ import {takeUntil} from 'rxjs/operators';
 import {SignalStrengthConverterService} from './signal-strength-converter.service';
 import {RadialGauge} from '@biacsics/ng-canvas-gauges';
 
+const MODE_FAIL_TRHESHOLD = 1;
+
 @Component({
   selector: 'app-radio',
   templateUrl: './radio.component.html',
@@ -15,6 +17,9 @@ export class RadioComponent implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild('meterContainer') meterContainer: ElementRef<HTMLDivElement>;
   @ViewChild('meterCanvas') meterCanvas: ElementRef<HTMLCanvasElement>;
   @ViewChild('gauge') gauge: RadialGauge;
+
+  connected = false;
+  mode_fail_count = 0;
 
   showGauge = false;
   utcTime: string;
@@ -135,6 +140,21 @@ export class RadioComponent implements OnInit, OnDestroy, AfterViewInit {
     return n;
   }
 
+  private handleFailedModeRequest() {
+    // if get_mode fails MODE_FAIL_THRESHOLD times, consider ourselves disconnected
+    if(this.mode_fail_count < MODE_FAIL_TRHESHOLD) {
+      this.mode_fail_count++;
+      if(this.mode_fail_count >= MODE_FAIL_TRHESHOLD) {
+        this.connected = false;
+        this.mode = '';
+        this.freq = '';
+        this.sValue = 0;
+        this.signalStrength = 'Disconnected';
+        console.log('disconnected');
+      }
+    }
+  }
+
   private handleNotification(notification: string) : void {
     const jsonObj = JSON.parse(notification);
     const status: boolean = jsonObj['status'];
@@ -143,15 +163,40 @@ export class RadioComponent implements OnInit, OnDestroy, AfterViewInit {
 
     if(!status) {
       console.log(`failed command: ${op}`);
+
+      // if get_mode fails MODE_FAIL_THRESHOLD times, consider ourselves disconnected
+      if(op === 'get_mode') {
+        this.handleFailedModeRequest();
+      }
+
       return;
     }
 
     switch(op) {
       case 'get_mode':
+
+        if(!value || value === 'Mode:') { // weird failure mode...... 'get_mode:|Mode: |Passband: 2400|RPRT 0'
+          this.handleFailedModeRequest();
+          return;
+        }
+
         this.mode = value;
+
+        // recover from potential disconnected state
+        if(!this.connected) {
+          this.connected = true;
+          console.log('connected');
+        }
+        this.mode_fail_count = 0;
         break;
 
       case 'get_signal_strength':
+        if(!this.connected) {
+          this.sValue = 0;
+          this.signalStrength = '';
+          break;
+        }
+
         this.sValue = this.signalStrengthConverter.strengthToSLevel(jsonObj['value']);
         if (this.sValue <= 9) {
           this.signalStrength = `s${this.sValue.toFixed(2)}`;
@@ -161,6 +206,10 @@ export class RadioComponent implements OnInit, OnDestroy, AfterViewInit {
         break;
 
       case 'get_freq':
+        if(!this.connected) {
+          this.freq = '';
+        }
+
         if(jsonObj['value']) {
           this.freq = RadioComponent.numberWithThousandsSeparator(jsonObj['value'], '.');
           this.freq = this.freq.substr(0, this.freq.length - 1);

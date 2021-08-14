@@ -4,7 +4,9 @@
     <div>UTC: <span class="clock">{{utcTime}}</span></div>
   </div>
 
-  <div class="freq_mode">
+  <div *ngIf="!connected" class="freq_mode">Disconnected</div>
+
+  <div *ngIf="connected" class="freq_mode">
     <span class="seven-segment">{{freq}}</span><span> MHz {{mode}}</span>
   </div>
 
