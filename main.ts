@@ -176,6 +176,7 @@ function createCustomMenu() {
     ...(isMac ? [] : [{
       label: 'File',
       submenu: [
+        { role: 'reload' },
         { role: 'quit' }
       ]
     }]),
@@ -186,7 +187,7 @@ function createCustomMenu() {
       submenu:
 
         dev ? [
-          { role: 'reload' },
+          // { role: 'reload' },
           { role: 'forceReload' },
           { role: 'toggleDevTools' },
           { type: 'separator' },

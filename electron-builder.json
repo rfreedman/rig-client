@@ -32,6 +32,7 @@
     ]
   },
   "linux": {
+    "category": "HamRadio",
     "icon": "dist/assets/icons",
     "target": [
       "AppImage"

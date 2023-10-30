@@ -114,7 +114,8 @@ export class RadioComponent implements OnInit, OnDestroy, AfterViewInit {
       .pipe(takeUntil(this.destroyed))
       .subscribe(
         (data) => this.handleNotification(data),
-        (err) => console.error(err)
+        (err) => console.error("!!!!! subscription error !!!!" + err),
+        () => console.error("#### subscription closed")
       );
 
     this.interval = setInterval(() => this.updateTimes(), 1000);
@@ -156,13 +157,21 @@ export class RadioComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private handleNotification(notification: string) : void {
-    const jsonObj = JSON.parse(notification);
+    var jsonObj;
+
+    try {
+       jsonObj = JSON.parse(notification);
+    } catch(error) {
+      console.error("Error parsing notification: ", notification, error);
+      return;
+    }
+
     const status: boolean = jsonObj['status'];
     const op: string = jsonObj['op'];
     const value: string = jsonObj['value'];
 
     if(!status) {
-      console.log(`failed command: ${op}`);
+      console.log(`failed command: ${op}`, notification );
 
       // if get_mode fails MODE_FAIL_THRESHOLD times, consider ourselves disconnected
       if(op === 'get_mode') {

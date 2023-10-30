@@ -23,6 +23,15 @@ export class RadioNetworkService {
 
   connected = false;
 
+  private reconnect(host: string, port: number, cb: (string) => void) {
+    console.log("reconnect - stopping the client socket");
+    this.stop();
+    setTimeout(() => {
+      console.log("reconnect - connecting new socket");
+      this.start(host, port, cb);
+    }, 10_000);
+  }
+
   public start(host: string, port: number, cb: (string) => void): void {
     this.client = new Socket();
     this.callback = cb;
@@ -35,26 +44,35 @@ export class RadioNetworkService {
 
     this.client.on('close', () => {
       console.log('Connection closed');
-      this.client.destroy();
-      this.connected = false;
+      // this.client.destroy();
+      // this.connected = false;
+      this.reconnect(host, port, cb);
     });
 
     this.client.on('timeout', () => {
       console.log('Timeout');
-      this.client.destroy();
-      this.connected = false;
+      //this.client.destroy();
+      //this.connected = false;
+
+      /*
       if(this.callback) {
         this.callback("CONNECT_ERROR");
       }
+      */
+
+      this.reconnect(host, port, cb);
     });
 
     this.client.on('error', (err: Error) => {
       console.log(`Error: ${err.message}`);
-      this.client.destroy();
-      this.connected = false;
+
+      /*
       if(this.callback) {
         this.callback("CONNECT_ERROR");
       }
+      */
+
+      this.reconnect(host, port, cb);
     });
 
     console.log('Connecting...');
@@ -63,9 +81,11 @@ export class RadioNetworkService {
       this.connected = true;
       console.log(`${Date()}: Connected`);
 
+      /*
       if(this.callback) {
         this.callback("CONNECTED");
       }
+      */
 
       // kick off the command processor
       setTimeout(() => this.processNext(), minCmdIntervalMsec);
@@ -74,6 +94,7 @@ export class RadioNetworkService {
 
   public stop() {
     this.connected = false;
+    this.client.destroy();
   }
 
   private processNext(): void {

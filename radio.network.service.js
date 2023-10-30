@@ -20,6 +20,15 @@ var RadioNetworkService = /** @class */ (function () {
         this.commandQ = new FifoQueue();
         this.connected = false;
     }
+    RadioNetworkService.prototype.reconnect = function (host, port, cb) {
+        var _this = this;
+        console.log("reconnect - stopping the client socket");
+        this.stop();
+        setTimeout(function () {
+            console.log("reconnect - connecting new socket");
+            _this.start(host, port, cb);
+        }, 10000);
+    };
     RadioNetworkService.prototype.start = function (host, port, cb) {
         var _this = this;
         this.client = new net_1.Socket();
@@ -31,38 +40,46 @@ var RadioNetworkService = /** @class */ (function () {
         });
         this.client.on('close', function () {
             console.log('Connection closed');
-            _this.client.destroy();
-            _this.connected = false;
+            // this.client.destroy();
+            // this.connected = false;
+            _this.reconnect(host, port, cb);
         });
         this.client.on('timeout', function () {
             console.log('Timeout');
-            _this.client.destroy();
-            _this.connected = false;
-            if (_this.callback) {
-                _this.callback("CONNECT_ERROR");
+            //this.client.destroy();
+            //this.connected = false;
+            /*
+            if(this.callback) {
+              this.callback("CONNECT_ERROR");
             }
+            */
+            _this.reconnect(host, port, cb);
         });
         this.client.on('error', function (err) {
             console.log("Error: " + err.message);
-            _this.client.destroy();
-            _this.connected = false;
-            if (_this.callback) {
-                _this.callback("CONNECT_ERROR");
+            /*
+            if(this.callback) {
+              this.callback("CONNECT_ERROR");
             }
+            */
+            _this.reconnect(host, port, cb);
         });
         console.log('Connecting...');
         this.client.connect(port, host, function () {
             _this.connected = true;
             console.log(Date() + ": Connected");
-            if (_this.callback) {
-                _this.callback("CONNECTED");
+            /*
+            if(this.callback) {
+              this.callback("CONNECTED");
             }
+            */
             // kick off the command processor
             setTimeout(function () { return _this.processNext(); }, minCmdIntervalMsec);
         });
     };
     RadioNetworkService.prototype.stop = function () {
         this.connected = false;
+        this.client.destroy();
     };
     RadioNetworkService.prototype.processNext = function () {
         var _this = this;
@@ -113,10 +130,8 @@ var RadioNetworkService = /** @class */ (function () {
         for (var i = 1; i < parts.length; i++) {
             if (parts[i].startsWith('RPRT')) {
                 status = parts[i].substr(5);
-                // console.log(`found status`, status);
                 break;
             }
-            // console.log(`parsed status = `, status);
         }
         if (status === "0") {
             var rawValue = parts[1].trim();
